@@ -471,14 +471,29 @@ static int full_search(board_t * board, int alpha, int beta, int depth, int heig
    attack_set(attack,board);
    in_check = ATTACK_IN_CHECK(attack);
 
+   // static null move / beta pruning
+
+   if (!in_check
+   && !value_is_mate(beta)
+   && do_null(board)
+   && !was_null
+   && node_type != NodePV
+   && depth <= 3) {
+	   int sc = eval(board) - 120 * depth; // TODO: Tune me!
+	   if (sc > beta) return sc;
+   }
+
    // null-move pruning
 
-   if (UseNull && depth >= NullDepth && node_type != NodePV && !was_null) {
+   if (UseNull 
+   && depth >= NullDepth 
+   && node_type != NodePV 
+   && !was_null) {
 
       if (!in_check
-       && !value_is_mate(beta)
-       && do_null(board)
-       && (!UseNullEval || depth <= NullReduction+1 || eval(board) >= beta)) {
+      && !value_is_mate(beta)
+      && do_null(board)
+      && (!UseNullEval || depth <= NullReduction+1 || eval(board) >= beta)) {
 
          // null-move search
 
@@ -575,8 +590,12 @@ static int full_search(board_t * board, int alpha, int beta, int depth, int heig
 
       reduced = false;
 
-      if (UseHistory && depth >= HistoryDepth && node_type != NodePV) {
-         if (!in_check && played_nb >= HistoryMoveNb && new_depth < depth) {
+      if (UseHistory 
+      && depth >= HistoryDepth 
+      && node_type != NodePV) {
+         if (!in_check 
+         && played_nb >= HistoryMoveNb 
+         && new_depth < depth) {
             ASSERT(best_value!=ValueNone);
             ASSERT(played_nb>0);
             ASSERT(sort->pos>0&&move==LIST_MOVE(sort->list,sort->pos-1));

@@ -207,8 +207,8 @@ static void loop_step() {
       ASSERT(!Searching);
       ASSERT(!Delay);
 
-      send("id name Fruit " VERSION);
-      send("id author Fabien Letouzey");
+      send("id name GrowingFruit " VERSION);
+      send("id author Fabien Letouzey, Pawel Koziol");
 
       option_list();
 
