@@ -1,6 +1,27 @@
 
 // eval.cpp
 
+/*
+
+Toga Chekov
+Changes from default:
+
+[OPTIONS]
+Verification Reduction=6
+Futility Margin=125
+Extended Futility Margin=325
+Delta Margin=55
+Quiescence Check Plies=2
+Material=102
+Piece Activity=103
+King Safety=125
+Pawn Structure=105
+Passed Pawns=105
+Toga Lazy Eval Margin=245
+Toga Extended History Pruning=true
+
+*/
+
 // includes
 
 #include <cstdlib> // for abs()
@@ -23,11 +44,20 @@
 
 #define THROUGH(piece) ((piece)==Empty)
 
+// vectors
+
+const int knight_vector[8] = { -33, -31, -18, -14, 33, 31, 18, 14 };
+const int bishop_vector[4] = { -15, -17, 15, 17 };
+const int rook_vector[4] = { -1, -16, 16, 1 };
+
 // constants and variables
 
 static /* const */ int PieceActivityWeight = 256; // 100%
-static /* const */ int KingSafetyWeight = 256; // 100%
-static /* const */ int PassedPawnWeight = 256; // 100%
+static /* const */ int KingSafetyWeight = 256;    // 100%
+static /* const */ int PassedPawnWeight = 256;    // 100%
+
+// average mobility: with less moves per piece, 
+// mobility score will become negative
 
 static const int KnightUnit = 4;
 static const int BishopUnit = 6;
@@ -37,6 +67,8 @@ static const int QueenUnit = 13;
 static const int MobMove = 1;
 static const int MobAttack = 1;
 static const int MobDefense = 0;
+
+// mobility multipliers
 
 static const int KnightMobOpening = 4;
 static const int KnightMobEndgame = 4;
@@ -97,6 +129,16 @@ static const int KingAttackWeight[16] = {
 static int MobUnit[ColourNb][PieceNb];
 
 static int KingAttackUnit[PieceNb];
+
+// eval hashtable
+
+typedef struct eval_hash {
+	int value;
+	uint64 key;
+} eval_hash;
+
+static const unsigned int EVAL_HASH_MASK = 0x1FFFF;
+static eval_hash eht[EVAL_HASH_MASK + 1] = { 0 };
 
 // prototypes
 
@@ -217,6 +259,13 @@ int eval(const board_t * board) {
    int eval;
    int wb, bb;
 
+   // Check for previous evaluation and return score if signature is identical
+
+   uint64 hash = board->key;
+   eval_hash *e = &eht[hash & EVAL_HASH_MASK];
+   if (e->key == hash)
+	   return e->value;
+
    ASSERT(board!=NULL);
 
    ASSERT(board_is_legal(board));
@@ -306,6 +355,11 @@ int eval(const board_t * board) {
    if (COLOUR_IS_BLACK(board->turn)) eval = -eval;
 
    ASSERT(!value_is_mate(eval));
+
+   // save score in eval hashtable
+
+   e->key = hash;
+   e->value = eval;
 
    return eval;
 }
@@ -699,8 +753,8 @@ static void eval_piece(const board_t * board, const material_info_t * mat_info, 
             // 7th rank
 
             if (PAWN_RANK(from,me) == Rank7) {
-               if ((pawn_info->flags[opp] & BackRankFlag) != 0 // opponent pawn on 7th rank
-                || PAWN_RANK(KING_POS(board,opp),me) == Rank8) {
+               if ((pawn_info->flags[opp] & BackRankFlag) != 0   // opponent's pawn on 7th rank
+               || PAWN_RANK(KING_POS(board,opp),me) == Rank8) {  // opponent's king on 8th rank
                   op[me] += Rook7thOpening;
                   eg[me] += Rook7thEndgame;
                }
@@ -744,8 +798,8 @@ static void eval_piece(const board_t * board, const material_info_t * mat_info, 
             // 7th rank
 
             if (PAWN_RANK(from,me) == Rank7) {
-               if ((pawn_info->flags[opp] & BackRankFlag) != 0 // opponent pawn on 7th rank
-                || PAWN_RANK(KING_POS(board,opp),me) == Rank8) {
+               if ((pawn_info->flags[opp] & BackRankFlag) != 0   // opponent's pawn on 7th rank
+               || PAWN_RANK(KING_POS(board,opp),me) == Rank8) {  // opponent's king on 8th rank
                   op[me] += Queen7thOpening;
                   eg[me] += Queen7thEndgame;
                }
