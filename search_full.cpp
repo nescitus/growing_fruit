@@ -350,7 +350,7 @@ static int full_search(board_t * board, int alpha, int beta, int depth, int heig
    int value, best_value;
    int move, best_move;
    int new_depth;
-   int played_nb;
+   int played_nb, quiet_nb;
    int i;
    int opt_value;
    bool reduced;
@@ -466,6 +466,7 @@ static int full_search(board_t * board, int alpha, int beta, int depth, int heig
    best_value = ValueNone;
    best_move = MoveNone;
    played_nb = 0;
+   quiet_nb = 0;
 
    attack_set(attack,board);
    in_check = ATTACK_IN_CHECK(attack);
@@ -555,7 +556,22 @@ static int full_search(board_t * board, int alpha, int beta, int depth, int heig
 
       new_depth = full_new_depth(depth,move,board,single_reply,node_type==NodePV);
 
-      // history pruning
+      // late move pruning
+
+      if (!in_check 
+      && new_depth < depth 
+      && new_depth < 4 
+      && node_type != NodePV
+      && !move_is_tactical(move, board) 
+      && !move_is_dangerous(move, board)) {
+
+          ASSERT(!move_is_check(move, board));
+          quiet_nb++;
+          value = sort->value; // history score
+          if (quiet_nb > depth / 4 + 1 && value < HistoryValue) continue;
+      }
+
+      // history pruning / late move reduction
 
       reduced = false;
 
