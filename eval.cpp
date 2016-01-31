@@ -658,14 +658,8 @@ static void eval_piece(const board_t * board, const material_info_t * mat_info, 
 
             mob = -KnightUnit;
 
-            mob += unit[board->square[from-33]];
-            mob += unit[board->square[from-31]];
-            mob += unit[board->square[from-18]];
-            mob += unit[board->square[from-14]];
-            mob += unit[board->square[from+14]];
-            mob += unit[board->square[from+18]];
-            mob += unit[board->square[from+31]];
-            mob += unit[board->square[from+33]];
+            for (int i = 0; i < 8; ++i)
+                mob += unit[board->square[from + knight_vector[i]]];
 
             op[me] += mob * KnightMobOpening;
             eg[me] += mob * KnightMobEndgame;
@@ -678,17 +672,12 @@ static void eval_piece(const board_t * board, const material_info_t * mat_info, 
 
             mob = -BishopUnit;
 
-            for (to = from-17; capture=board->square[to], THROUGH(capture); to -= 17) mob += MobMove;
-            mob += unit[capture];
+            for (int i = 0; i < 4; ++i) {
+                int vc = bishop_vector[i];
 
-            for (to = from-15; capture=board->square[to], THROUGH(capture); to -= 15) mob += MobMove;
-            mob += unit[capture];
-
-            for (to = from+15; capture=board->square[to], THROUGH(capture); to += 15) mob += MobMove;
-            mob += unit[capture];
-
-            for (to = from+17; capture=board->square[to], THROUGH(capture); to += 17) mob += MobMove;
-            mob += unit[capture];
+                for (to = from +vc; capture = board->square[to], THROUGH(capture); to += vc) mob += MobMove;
+                mob += unit[capture];
+            }
 
             op[me] += mob * BishopMobOpening;
             eg[me] += mob * BishopMobEndgame;
@@ -701,17 +690,12 @@ static void eval_piece(const board_t * board, const material_info_t * mat_info, 
 
             mob = -RookUnit;
 
-            for (to = from-16; capture=board->square[to], THROUGH(capture); to -= 16) mob += MobMove;
-            mob += unit[capture];
+            for (int i = 0; i < 4; ++i) {
+                int vc = rook_vector[i];
 
-            for (to = from- 1; capture=board->square[to], THROUGH(capture); to -=  1) mob += MobMove;
-            mob += unit[capture];
-
-            for (to = from+ 1; capture=board->square[to], THROUGH(capture); to +=  1) mob += MobMove;
-            mob += unit[capture];
-
-            for (to = from+16; capture=board->square[to], THROUGH(capture); to += 16) mob += MobMove;
-            mob += unit[capture];
+                for (to = from + vc; capture = board->square[to], THROUGH(capture); to += vc) mob += MobMove;
+                mob += unit[capture];
+            }
 
             op[me] += mob * RookMobOpening;
             eg[me] += mob * RookMobEndgame;
@@ -768,29 +752,19 @@ static void eval_piece(const board_t * board, const material_info_t * mat_info, 
 
             mob = -QueenUnit;
 
-            for (to = from-17; capture=board->square[to], THROUGH(capture); to -= 17) mob += MobMove;
-            mob += unit[capture];
+            for (int i = 0; i < 4; ++i) {
+                int vc = bishop_vector[i];
 
-            for (to = from-16; capture=board->square[to], THROUGH(capture); to -= 16) mob += MobMove;
-            mob += unit[capture];
+                for (to = from + vc; capture = board->square[to], THROUGH(capture); to += vc) mob += MobMove;
+                mob += unit[capture];
+            }
 
-            for (to = from-15; capture=board->square[to], THROUGH(capture); to -= 15) mob += MobMove;
-            mob += unit[capture];
+            for (int i = 0; i < 4; ++i) {
+                int vc = rook_vector[i];
 
-            for (to = from- 1; capture=board->square[to], THROUGH(capture); to -=  1) mob += MobMove;
-            mob += unit[capture];
-
-            for (to = from+ 1; capture=board->square[to], THROUGH(capture); to +=  1) mob += MobMove;
-            mob += unit[capture];
-
-            for (to = from+15; capture=board->square[to], THROUGH(capture); to += 15) mob += MobMove;
-            mob += unit[capture];
-
-            for (to = from+16; capture=board->square[to], THROUGH(capture); to += 16) mob += MobMove;
-            mob += unit[capture];
-
-            for (to = from+17; capture=board->square[to], THROUGH(capture); to += 17) mob += MobMove;
-            mob += unit[capture];
+                for (to = from + vc; capture = board->square[to], THROUGH(capture); to += vc) mob += MobMove;
+                mob += unit[capture];
+            }
 
             op[me] += mob * QueenMobOpening;
             eg[me] += mob * QueenMobEndgame;
