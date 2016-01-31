@@ -541,6 +541,24 @@ static int full_search(board_t * board, int alpha, int beta, int depth, int heig
       }
    }
 
+   // Razoring
+
+   if (node_type != NodePV 
+   && !in_check 
+   && trans_move == MoveNone    
+   && do_null(board) 
+   && !was_null 
+   && depth <= 3
+   && !value_is_mate(beta)) {
+   // TODO: no razoring in positions with pawns about to promote
+	   int threshold = beta - 300 - (depth - 1) * 60;
+	   if (eval(board) < threshold){
+		   value = full_quiescence(board, threshold - 1, threshold, 0, height, pv);
+		   if (value < threshold) // corrected - was < beta which is too risky at depth > 1
+			   return value;
+	   }
+   }
+
    // Internal Iterative Deepening
 
    if (UseIID && depth >= IIDDepth && node_type == NodePV && trans_move == MoveNone) {
