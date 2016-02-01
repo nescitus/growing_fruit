@@ -124,6 +124,46 @@ static const int KingAttackWeight[16] = {
    0, 0, 128, 192, 224, 240, 248, 252, 254, 255, 256, 256 ,256, 256, 256, 256,
 };
 
+const int KnightOutpostMatrix[2][64] = {
+     0,	 0,   0,   0,   0,   0,   0,   0,
+     0,	 0,   0,   0,   0,   0,   0,   0,
+     0,	 0,   0,   0,   0,   0,   0,   0,
+     0,	 2,   5,  10,  10,   5 ,  2,   0,
+     0,	 2,   5,  10,  10,   5,   2,   0,
+     0,	 0,   4,   5,   5,   4,   0,   0,
+     0,	 0,   0,   0,   0,   0,   0,   0,
+     0,	 0,   0,   0,   0,   0,   0,   0,
+
+     0,	 0,   0,   0,   0,   0,   0,   0,
+     0,	 0,   0,   0,   0,   0,   0,   0,
+     0,	 0,   4,   5,   5,   4,   0,   0,
+     0,	 2,   5,  10,  10,   5,   2,   0,
+     0,	 2,   5,  10,  10,   5,   2,   0,
+     0,	 0,   0,   0,   0,   0,   0,   0,
+     0,	 0,   0,   0,   0,   0,   0,   0,
+     0,	 0,   0,   0,   0,   0,   0,   0,
+};
+
+const int BishopOutpostMatrix[2][64] = {
+     0,	 0,   0,   0,   0,   0,   0,   0,
+     0,	 0,   0,   0,   0,   0,   0,   0,
+     0,	 0,   0,   0,   0,   0,   0,   0,
+     0,	 0,   2,   5,   5,   2,   0,   0,
+     0,	 0,   2,   5,   5,   2,   0,   0,
+     0,	 0,   2,   2,   2,   2,   0,   0,
+     0,	 0,   0,   0,   0,   0,   0,   0,
+     0,	 0,   0,   0,   0,   0,   0,   0,
+
+     0,	 0,   0,   0,   0,   0,   0,   0,
+     0,	 0,   0,   0,   0,   0,   0,   0,
+     0,	 0,   2,   2,   2,   2,   0,   0,
+     0,	 0,   2,   2,   2,   2,   0,   0,
+     0,	 0,   2,   2,   2,   2,   0,   0,
+     0,	 0,   0,   0,   0,   0,   0,   0,
+     0,	 0,   0,   0,   0,   0,   0,   0,
+     0,	 0,   0,   0,   0,   0,   0,   0,
+};
+
 // variables
 
 static int MobUnit[ColourNb][PieceNb];
@@ -174,6 +214,10 @@ static int  shelter_file       (const board_t * board, int file, int rank, int c
 static int  storm_file         (const board_t * board, int file, int colour);
 
 static bool bishop_can_attack  (const board_t * board, int to, int colour);
+int white_pawn_controls        (const board_t * board, int sq);
+int black_pawn_controls        (const board_t * board, int sq);
+int enemy_pawn_controls        (const board_t * board, int colour, int sq);
+int own_pawn_controls          (const board_t * board, int colour, int sq);
 
 // functions
 
@@ -614,6 +658,7 @@ static void eval_piece(const board_t * board, const material_info_t * mat_info, 
    int from, to;
    int piece;
    int mob;
+   int sq;
    int capture;
    const int * unit;
    int rook_file, king_file;
@@ -658,11 +703,21 @@ static void eval_piece(const board_t * board, const material_info_t * mat_info, 
 
             mob = -KnightUnit;
 
-            for (int i = 0; i < 8; ++i)
-                mob += unit[board->square[from + knight_vector[i]]];
+			for (int i = 0; i < 8; ++i) {
+				mob += unit[board->square[from + knight_vector[i]]];
+			}
 
             op[me] += mob * KnightMobOpening;
             eg[me] += mob * KnightMobEndgame;
+
+			// pseudo-outpost (knight on a good square defended by a pawn)
+
+            if (!enemy_pawn_controls(board, me, from)) {
+               if (own_pawn_controls(board, me, from)) {
+                  op[me] += KnightOutpostMatrix[me][SquareTo64[from]];
+                  eg[me] += KnightOutpostMatrix[me][SquareTo64[from]];
+               }
+            }
 
             break;
 
@@ -681,6 +736,15 @@ static void eval_piece(const board_t * board, const material_info_t * mat_info, 
 
             op[me] += mob * BishopMobOpening;
             eg[me] += mob * BishopMobEndgame;
+
+            // pseudo-outpost (bishop on a good square defended by a pawn)
+
+            if (!enemy_pawn_controls(board, me, from)) {
+               if (own_pawn_controls(board, me, from)) {
+                  op[me] += BishopOutpostMatrix[me][SquareTo64[from]];
+                  eg[me] += BishopOutpostMatrix[me][SquareTo64[from]];
+               }
+            }
 
             break;
 
@@ -1914,6 +1978,24 @@ static bool bishop_can_attack(const board_t * board, int to, int colour) {
    }
 
    return false;
+}
+
+int white_pawn_controls(const board_t * board, int sq) {
+	return (board->square[sq - 15] == WP || board->square[sq - 17] == WP);
+}
+
+int black_pawn_controls(const board_t * board, int sq) {
+	return (board->square[sq + 15] == BP || board->square[sq + 17] == BP);
+}
+
+int enemy_pawn_controls(const board_t * board, int colour, int sq) {
+	if (colour == White) return black_pawn_controls(board, sq);
+	return white_pawn_controls(board, sq);
+}
+
+int own_pawn_controls(const board_t * board, int colour, int sq) {
+	if (colour == White) return white_pawn_controls(board, sq);
+	return black_pawn_controls(board, sq);
 }
 
 // end of eval.cpp
