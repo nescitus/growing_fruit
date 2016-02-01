@@ -3,6 +3,8 @@
 
 // includes
 
+#include <math.h>
+
 #include "attack.h"
 #include "board.h"
 #include "colour.h"
@@ -85,10 +87,16 @@ static const int NodeAll = -1;
 static const int NodePV  =  0;
 static const int NodeCut = +1;
 
+// lmr
+
+int lmr_pv[256][256];
+int lmr_zw[256][256];
+
 // macros
 
 #define NODE_OPP(type)     (-(type))
 #define DEPTH_MATCH(d1,d2) ((d1)>=(d2))
+#define Min(x, y)          ((x) < (y) ? (x) : (y))
 
 // prototypes
 
@@ -184,6 +192,26 @@ void search_full_init(list_t * list, board_t * board) {
 
    CheckNb = option_get_int("Quiescence Check Plies");
    CheckDepth = 1 - CheckNb;
+
+   // late move reduction
+
+   // Set depth of late move reduction using modified Stockfish formula
+
+   for (int dp = 0; dp < 256; dp++)
+	   for (int mv = 0; mv < 256; mv++) {
+		   lmr_zw[dp][mv] = (0.33 + log((double)(dp)) * log((double)(Min(mv, 63))) / 2.25); // zero window node
+		   lmr_pv[dp][mv] = (0.00 + log((double)(dp)) * log((double)(Min(mv, 63))) / 3.50); // principal variation node
+
+		    if (lmr_pv[dp][mv] < 1) lmr_pv[dp][mv] = 0; // ultra-small reductions make no sense
+			else lmr_pv[dp][mv] += 0.5;
+			if (lmr_zw[dp][mv] < 1) lmr_zw[dp][mv] = 0;
+			else lmr_zw[dp][mv] += 0.5;
+
+		   if (lmr_pv[dp][mv] > dp - 1) // reduction cannot exceed actual depth
+			   lmr_pv[dp][mv] = dp - 1;
+		   if (lmr_zw[dp][mv] > dp - 1)
+			   lmr_zw[dp][mv] = dp - 1;
+	   }
 
    // standard sort
 
@@ -353,7 +381,8 @@ static int full_search(board_t * board, int alpha, int beta, int depth, int heig
    int played_nb, quiet_nb;
    int i;
    int opt_value;
-   bool reduced;
+   bool flag_reduced;
+   int reduction;
    attack_t attack[1];
    sort_t sort[1];
    undo_t undo[1];
@@ -606,26 +635,32 @@ static int full_search(board_t * board, int alpha, int beta, int depth, int heig
 
       // history pruning / late move reduction
 
-      reduced = false;
+      flag_reduced = false;
+	  reduction = 0;
 
       if (UseHistory 
       && depth >= HistoryDepth 
-      && node_type != NodePV) {
+	  && (move != trans_move)
+	  && (!move_is_tactical(move, board))
+	  && (!move_is_check(move, board))
+      /*&& node_type != NodePV*/) {
          if (!in_check 
          && played_nb >= HistoryMoveNb 
          && new_depth < depth) {
             ASSERT(best_value!=ValueNone);
             ASSERT(played_nb>0);
             ASSERT(sort->pos>0&&move==LIST_MOVE(sort->list,sort->pos-1));
-            value = sort->value; // history score
-            if (value < HistoryValue) {
+            //value = sort->value; // history score
+            //if (value < HistoryValue) {
                ASSERT(value>=0&&value<16384);
                ASSERT(move!=trans_move);
                ASSERT(!move_is_tactical(move,board));
                ASSERT(!move_is_check(move,board));
-               new_depth--;
-               reduced = true;
-            }
+			   if (node_type == NodePV) reduction = lmr_pv[depth][played_nb];
+			   else                     reduction = lmr_zw[depth][played_nb];
+			   new_depth -= reduction;
+               if (reduction > 0) flag_reduced = true;
+            //}
          }
       }
 
@@ -675,11 +710,13 @@ static int full_search(board_t * board, int alpha, int beta, int depth, int heig
 
       // history-pruning re-search
 
-      if (HistoryReSearch && reduced && value >= beta) {
+      if (HistoryReSearch 
+	  && flag_reduced 
+	  && value >= beta) {
 
          ASSERT(node_type!=NodePV);
 
-         new_depth++;
+         new_depth += reduction;
          ASSERT(new_depth==depth-1);
 
          value = -full_search(board,-beta,-alpha,new_depth,height+1,new_pv,NODE_OPP(node_type), 0);
