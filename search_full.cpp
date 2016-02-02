@@ -68,11 +68,6 @@ static const int HistoryMoveNb = 3;
 static /* const */ int HistoryValue = 9830; // 60%
 static const bool HistoryReSearch = true;
 
-// futility pruning
-
-static /* const */ bool UseFutility = false; // false
-static /* const */ int FutilityMargin = 100;
-
 // quiescence search
 
 static /* const */ bool UseDelta = false; // false
@@ -177,11 +172,6 @@ void search_full_init(list_t * list, board_t * board) {
 
    UseHistory = option_get_bool("History Pruning");
    HistoryValue = (option_get_int("History Threshold") * 16384 + 50) / 100;
-
-   // futility-pruning options
-
-   UseFutility = option_get_bool("Futility Pruning");
-   FutilityMargin = option_get_int("Futility Margin");
 
    // delta-pruning options
 
@@ -666,16 +656,18 @@ static int full_search(board_t * board, int alpha, int beta, int depth, int heig
 
       // futility pruning
 
-      if (UseFutility && depth == 1 && node_type != NodePV) {
+      if (depth <= 6 && node_type != NodePV) {
 
-         if (!in_check && new_depth == 0 && !move_is_tactical(move,board) && !move_is_dangerous(move,board)) {
-
-            ASSERT(!move_is_check(move,board));
+         if (!in_check 
+         && new_depth == depth-1 
+		 && !move_is_check(move, board)
+         && !move_is_tactical(move,board) 
+         && !move_is_dangerous(move,board)) {
 
             // optimistic evaluation
 
             if (opt_value == +ValueInf) {
-               opt_value = eval(board) + FutilityMargin;
+               opt_value = eval(board) + 50 + 50 * depth;
                ASSERT(opt_value<+ValueInf);
             }
 

@@ -8,8 +8,6 @@ Changes from default:
 
 [OPTIONS]
 Verification Reduction=6
-Futility Margin=125
-Extended Futility Margin=325
 Delta Margin=55
 Quiescence Check Plies=2
 Material=102
