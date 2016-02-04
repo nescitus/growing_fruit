@@ -27,7 +27,7 @@
 
 // constants
 
-#define VERSION "0.013"
+#define VERSION "0.014"
 
 static const double NormalRatio = 1.0;
 static const double PonderRatio = 1.25;

@@ -1,25 +1,6 @@
 
 // eval.cpp
 
-/*
-
-Toga Chekov
-Changes from default:
-
-[OPTIONS]
-Verification Reduction=6
-Delta Margin=55
-Quiescence Check Plies=2
-Material=102
-Piece Activity=103
-King Safety=125
-Pawn Structure=105
-Passed Pawns=105
-Toga Lazy Eval Margin=245
-Toga Extended History Pruning=true
-
-*/
-
 // includes
 
 #include <cstdlib> // for abs()
@@ -41,6 +22,7 @@ Toga Extended History Pruning=true
 // macros
 
 #define THROUGH(piece) ((piece)==Empty)
+#define ABS(x)         ((x)<0?-(x):(x))
 
 // vectors
 
@@ -53,6 +35,7 @@ const int rook_vector[4] = { -1, -16, 16, 1 };
 static /* const */ int PieceActivityWeight = 256; // 100%
 static /* const */ int KingSafetyWeight = 256;    // 100%
 static /* const */ int PassedPawnWeight = 256;    // 100%
+static /* const */ int KingTropismWeight = 64;    //  25%
 
 // average mobility: with less moves per piece, 
 // mobility score will become negative
@@ -87,8 +70,20 @@ static const int RookOpenFileEndgame = 20;
 static const int RookSemiKingFileOpening = 10;
 static const int RookKingFileOpening = 20;
 
+// king tropism options
+
+static const int UseTropism = true;
+static const int KnightTropismOpening = 3;
+static const int KnightTropismEndgame = 3;
+static const int BishopTropismOpening = 2;
+static const int BishopTropismEndgame = 1;
+static const int RookTropismOpening = 2;
+static const int RookTropismEndgame = 1;
+static const int QueenTropismOpening = 2;
+static const int QueenTropismEndgame = 4;
+
 static const bool UseKingAttack = true;
-static const int KingAttackOpening = 20;
+static const int KingAttackOpening = 20; // 25 seems no worse
 
 static const bool UseShelter = true;
 static const int ShelterOpening = 256; // 100%
@@ -650,16 +645,18 @@ static void eval_piece(const board_t * board, const material_info_t * mat_info, 
 
    int colour;
    int op[ColourNb], eg[ColourNb];
+   int tropism_op[ColourNb], tropism_eg[ColourNb];
    int me, opp;
    int opp_flag;
    const sq_t * ptr;
    int from, to;
    int piece;
+   int dist;
    int mob;
    int sq;
    int capture;
    const int * unit;
-   int rook_file, king_file;
+   int piece_file, piece_rank, king_file, king_rank;
    int king;
    int delta;
 
@@ -674,17 +671,23 @@ static void eval_piece(const board_t * board, const material_info_t * mat_info, 
    for (colour = 0; colour < ColourNb; colour++) {
       op[colour] = 0;
       eg[colour] = 0;
+	  tropism_op[colour] = 0;
+	  tropism_eg[colour] = 0;
    }
 
    // eval
 
    for (colour = 0; colour < ColourNb; colour++) {
 
+      // init for current color
+
       me = colour;
       opp = COLOUR_OPP(me);
-
       opp_flag = COLOUR_FLAG(opp);
-
+	  king = KING_POS(board, opp);
+	  king_file = SQUARE_FILE(king);
+	  king_rank = SQUARE_RANK(king);
+	  
       unit = MobUnit[me];
 
       // piece loop
@@ -717,6 +720,14 @@ static void eval_piece(const board_t * board, const material_info_t * mat_info, 
                }
             }
 
+			// king tropism
+
+			piece_file = SQUARE_FILE(from);
+			piece_rank = SQUARE_RANK(from);
+			dist = 7 - (ABS(king_file - piece_file) + ABS(king_rank - piece_rank));
+			tropism_op[me] += KnightTropismOpening * dist;
+			tropism_eg[me] += KnightTropismEndgame * dist;
+
             break;
 
          case Bishop64:
@@ -744,6 +755,14 @@ static void eval_piece(const board_t * board, const material_info_t * mat_info, 
                }
             }
 
+			// king tropism
+
+			piece_file = SQUARE_FILE(from);
+			piece_rank = SQUARE_RANK(from);
+			dist = 7 - (ABS(king_file - piece_file) + ABS(king_rank - piece_rank));
+			tropism_op[me] += BishopTropismOpening * dist;
+			tropism_eg[me] += BishopTropismEndgame * dist;
+
             break;
 
          case Rook64:
@@ -769,14 +788,14 @@ static void eval_piece(const board_t * board, const material_info_t * mat_info, 
                op[me] -= RookOpenFileOpening / 2;
                eg[me] -= RookOpenFileEndgame / 2;
 
-               rook_file = SQUARE_FILE(from);
+               piece_file = SQUARE_FILE(from);
 
-               if (board->pawn_file[me][rook_file] == 0) { // no friendly pawn
+               if (board->pawn_file[me][piece_file] == 0) { // no friendly pawn
 
                   op[me] += RookSemiOpenFileOpening;
                   eg[me] += RookSemiOpenFileEndgame;
 
-                  if (board->pawn_file[opp][rook_file] == 0) { // no enemy pawn
+                  if (board->pawn_file[opp][piece_file] == 0) { // no enemy pawn
                      op[me] += RookOpenFileOpening - RookSemiOpenFileOpening;
                      eg[me] += RookOpenFileEndgame - RookSemiOpenFileEndgame;
                   }
@@ -786,7 +805,7 @@ static void eval_piece(const board_t * board, const material_info_t * mat_info, 
                      king = KING_POS(board,opp);
                      king_file = SQUARE_FILE(king);
 
-                     delta = abs(rook_file-king_file); // file distance
+                     delta = abs(piece_file-king_file); // file distance
 
                      if (delta <= 1) {
                         op[me] += RookSemiKingFileOpening;
@@ -805,6 +824,14 @@ static void eval_piece(const board_t * board, const material_info_t * mat_info, 
                   eg[me] += Rook7thEndgame;
                }
             }
+
+			// king tropism
+
+			piece_file = SQUARE_FILE(from);
+			piece_rank = SQUARE_RANK(from);
+			dist = 7 - (ABS(king_file - piece_file) + ABS(king_rank - piece_rank));
+			tropism_op[me] += RookTropismOpening * dist;
+			tropism_eg[me] += RookTropismEndgame * dist;
 
             break;
 
@@ -841,6 +868,14 @@ static void eval_piece(const board_t * board, const material_info_t * mat_info, 
                }
             }
 
+			// king tropism
+
+			piece_file = SQUARE_FILE(from);
+			piece_rank = SQUARE_RANK(from);
+			dist = 7 - (ABS(king_file - piece_file) + ABS(king_rank - piece_rank));
+			tropism_op[me] += QueenTropismOpening * dist;
+			tropism_eg[me] += QueenTropismEndgame * dist;
+
             break;
          }
       }
@@ -850,6 +885,9 @@ static void eval_piece(const board_t * board, const material_info_t * mat_info, 
 
    *opening += ((op[White] - op[Black]) * PieceActivityWeight) / 256;
    *endgame += ((eg[White] - eg[Black]) * PieceActivityWeight) / 256;
+   *opening += ((tropism_op[White] - tropism_op[Black]) * KingTropismWeight) / 256;
+   *endgame += ((tropism_eg[White] - tropism_eg[Black]) * KingTropismWeight) / 256;
+
 }
 
 // eval_king()

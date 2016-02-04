@@ -620,7 +620,9 @@ static int full_search(board_t * board, int alpha, int beta, int depth, int heig
           ASSERT(!move_is_check(move, board));
           quiet_nb++;
           value = sort->value; // history score
-          if (quiet_nb > depth / 4 + 1 && value < HistoryValue) continue;
+          if (quiet_nb > depth / 4 + 1 
+		  && value < HistoryValue) // useful
+		  continue;
       }
 
       // history pruning / late move reduction
@@ -641,7 +643,7 @@ static int full_search(board_t * board, int alpha, int beta, int depth, int heig
             ASSERT(played_nb>0);
             ASSERT(sort->pos>0&&move==LIST_MOVE(sort->list,sort->pos-1));
             //value = sort->value; // history score
-            //if (value < HistoryValue) {
+            //if (value < HistoryValue) { // useless
                ASSERT(value>=0&&value<16384);
                ASSERT(move!=trans_move);
                ASSERT(!move_is_tactical(move,board));
@@ -700,7 +702,7 @@ static int full_search(board_t * board, int alpha, int beta, int depth, int heig
          }
       }
 
-      // history-pruning re-search
+      // late move reduction re-search
 
       if (HistoryReSearch 
 	  && flag_reduced 
