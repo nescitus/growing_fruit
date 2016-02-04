@@ -226,6 +226,7 @@ void eval_init() {
    PieceActivityWeight = (option_get_int("Piece Activity") * 256 + 50) / 100;
    KingSafetyWeight    = (option_get_int("King Safety")    * 256 + 50) / 100;
    PassedPawnWeight    = (option_get_int("Passed Pawns")   * 256 + 50) / 100;
+   KingTropismWeight   = (option_get_int("King Tropism")   * 256 + 50) / 100;
 
    // mobility table
 

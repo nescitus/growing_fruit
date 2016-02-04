@@ -47,6 +47,7 @@ static option_t Option[] = {
    { "Material",        true, "100", "spin", "min 0 max 400", NULL },
    { "Piece Activity",  true, "100", "spin", "min 0 max 400", NULL },
    { "King Safety",     true, "100", "spin", "min 0 max 400", NULL },
+   { "King Tropism",    true,  "25", "spin", "min 0 max 400", NULL },
    { "Pawn Structure",  true, "100", "spin", "min 0 max 400", NULL },
    { "Passed Pawns",    true, "100", "spin", "min 0 max 400", NULL },
 

@@ -28,6 +28,7 @@ static const int A8=070, B8=071, C8=072, D8=073, E8=074, F8=075, G8=076, H8=077;
 static /* const */ int PieceActivityWeight = 256; // 100%
 static /* const */ int KingSafetyWeight = 256; // 100%
 static /* const */ int PawnStructureWeight = 256; // 100%
+static /* const */ int KingTropismWeight = 64; // 25%
 
 static const int PawnFileOpening = 5;
 static const int KnightCentreOpening = 5;
@@ -111,6 +112,7 @@ void pst_init() {
    PieceActivityWeight = (option_get_int("Piece Activity") * 256 + 50) / 100;
    KingSafetyWeight    = (option_get_int("King Safety")    * 256 + 50) / 100;
    PawnStructureWeight = (option_get_int("Pawn Structure") * 256 + 50) / 100;
+   KingTropismWeight   = (option_get_int("King Tropism")   * 256 + 50) / 100;
 
    // init
 
