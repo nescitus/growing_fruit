@@ -740,7 +740,9 @@ static void eval_piece(const board_t * board, const material_info_t * mat_info, 
             for (int i = 0; i < 4; ++i) {
                 int vc = bishop_vector[i];
 
-                for (to = from +vc; capture = board->square[to], THROUGH(capture); to += vc) mob += MobMove;
+				for (to = from + vc; capture = board->square[to], THROUGH(capture); to += vc) {
+					mob += MobMove;
+				}
                 mob += unit[capture];
             }
 
@@ -775,7 +777,9 @@ static void eval_piece(const board_t * board, const material_info_t * mat_info, 
             for (int i = 0; i < 4; ++i) {
                 int vc = rook_vector[i];
 
-                for (to = from + vc; capture = board->square[to], THROUGH(capture); to += vc) mob += MobMove;
+				for (to = from + vc; capture = board->square[to], THROUGH(capture); to += vc) {
+					mob += MobMove;
+				}
                 mob += unit[capture];
             }
 
@@ -845,14 +849,18 @@ static void eval_piece(const board_t * board, const material_info_t * mat_info, 
             for (int i = 0; i < 4; ++i) {
                 int vc = bishop_vector[i];
 
-                for (to = from + vc; capture = board->square[to], THROUGH(capture); to += vc) mob += MobMove;
+				for (to = from + vc; capture = board->square[to], THROUGH(capture); to += vc) {
+					mob += MobMove;
+				}
                 mob += unit[capture];
             }
 
             for (int i = 0; i < 4; ++i) {
                 int vc = rook_vector[i];
 
-                for (to = from + vc; capture = board->square[to], THROUGH(capture); to += vc) mob += MobMove;
+				for (to = from + vc; capture = board->square[to], THROUGH(capture); to += vc) {
+					mob += MobMove;
+				}
                 mob += unit[capture];
             }
 

@@ -39,9 +39,6 @@ static option_t Option[] = {
    { "History Pruning",     true, "true", "check", "", NULL },
    { "History Threshold",   true, "60",   "spin",  "min 0 max 100", NULL },
 
-   { "Delta Pruning", true, "false", "check", "", NULL },
-   { "Delta Margin",  true, "50",    "spin",  "min 0 max 500", NULL },
-
    { "Quiescence Check Plies", true, "1", "spin", "min 0 max 2", NULL },
 
    { "Material",        true, "100", "spin", "min 0 max 400", NULL },

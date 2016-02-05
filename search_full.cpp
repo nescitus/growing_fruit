@@ -70,8 +70,8 @@ static const bool HistoryReSearch = true;
 
 // quiescence search
 
-static /* const */ bool UseDelta = false; // false
-static /* const */ int DeltaMargin = 50;
+static /* const */ bool UseDelta = true; // false
+static /* const */ int DeltaMargin = 50; // TODO: tune me!
 
 static /* const */ int CheckNb = 1;
 static /* const */ int CheckDepth = 0; // 1 - CheckNb
@@ -172,11 +172,6 @@ void search_full_init(list_t * list, board_t * board) {
 
    UseHistory = option_get_bool("History Pruning");
    HistoryValue = (option_get_int("History Threshold") * 16384 + 50) / 100;
-
-   // delta-pruning options
-
-   UseDelta = option_get_bool("Delta Pruning");
-   DeltaMargin = option_get_int("Delta Margin");
 
    // quiescence-search options
 
