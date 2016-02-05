@@ -511,7 +511,7 @@ static int full_search(board_t * board, int alpha, int beta, int depth, int heig
 
          // null-move search
 
-         new_depth = depth - NullReduction - 1;
+		 new_depth = depth - ((823 + 67 * depth) / 256); // calculate reduction - simplified Stockfish formula
 
          move_do_null(board,undo);
          value = -full_search(board,-beta,-beta+1,new_depth,height+1,new_pv,NODE_OPP(node_type), 1);
@@ -978,7 +978,8 @@ static int full_quiescence(board_t * board, int alpha, int beta, int depth, int 
 
       // delta pruning
 
-      if (UseDelta && beta == old_alpha+1) {
+      if (UseDelta 
+	  && beta == old_alpha+1) { // non-pv node
 
          if (!in_check && !move_is_check(move,board) && !capture_is_dangerous(move,board)) {
 
