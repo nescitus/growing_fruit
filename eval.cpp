@@ -685,10 +685,10 @@ static void eval_piece(const board_t * board, const material_info_t * mat_info, 
       me = colour;
       opp = COLOUR_OPP(me);
       opp_flag = COLOUR_FLAG(opp);
-	  king = KING_POS(board, opp);
-	  king_file = SQUARE_FILE(king);
-	  king_rank = SQUARE_RANK(king);
-	  
+      king = KING_POS(board, opp);
+      king_file = SQUARE_FILE(king);
+      king_rank = SQUARE_RANK(king);
+  
       unit = MobUnit[me];
 
       // piece loop
@@ -696,6 +696,9 @@ static void eval_piece(const board_t * board, const material_info_t * mat_info, 
       for (ptr = &board->piece[me][1]; (from=*ptr) != SquareNone; ptr++) { // HACK: no king
 
          piece = board->square[from];
+         piece_file = SQUARE_FILE(from);
+         piece_rank = SQUARE_RANK(from);
+         dist = 7 - (ABS(king_file - piece_file) + ABS(king_rank - piece_rank)); // for king tropism eval
 
          switch (PIECE_TYPE(piece)) {
 
@@ -705,14 +708,14 @@ static void eval_piece(const board_t * board, const material_info_t * mat_info, 
 
             mob = -KnightUnit;
 
-			for (int i = 0; i < 8; ++i) {
-				mob += unit[board->square[from + knight_vector[i]]];
-			}
+            for (int i = 0; i < 8; ++i) {
+                mob += unit[board->square[from + knight_vector[i]]];
+            }
 
             op[me] += mob * KnightMobOpening;
             eg[me] += mob * KnightMobEndgame;
 
-			// pseudo-outpost (knight on a good square defended by a pawn)
+            // pseudo-outpost (knight on a good square defended by a pawn)
 
             if (!enemy_pawn_controls(board, me, from)) {
                if (own_pawn_controls(board, me, from)) {
@@ -721,13 +724,10 @@ static void eval_piece(const board_t * board, const material_info_t * mat_info, 
                }
             }
 
-			// king tropism
+            // king tropism
 
-			piece_file = SQUARE_FILE(from);
-			piece_rank = SQUARE_RANK(from);
-			dist = 7 - (ABS(king_file - piece_file) + ABS(king_rank - piece_rank));
-			tropism_op[me] += KnightTropismOpening * dist;
-			tropism_eg[me] += KnightTropismEndgame * dist;
+            tropism_op[me] += KnightTropismOpening * dist;
+            tropism_eg[me] += KnightTropismEndgame * dist;
 
             break;
 
@@ -740,9 +740,9 @@ static void eval_piece(const board_t * board, const material_info_t * mat_info, 
             for (int i = 0; i < 4; ++i) {
                 int vc = bishop_vector[i];
 
-				for (to = from + vc; capture = board->square[to], THROUGH(capture); to += vc) {
-					mob += MobMove;
-				}
+                for (to = from + vc; capture = board->square[to], THROUGH(capture); to += vc) {
+                    mob += MobMove;
+                }
                 mob += unit[capture];
             }
 
@@ -758,13 +758,10 @@ static void eval_piece(const board_t * board, const material_info_t * mat_info, 
                }
             }
 
-			// king tropism
+            // king tropism
 
-			piece_file = SQUARE_FILE(from);
-			piece_rank = SQUARE_RANK(from);
-			dist = 7 - (ABS(king_file - piece_file) + ABS(king_rank - piece_rank));
-			tropism_op[me] += BishopTropismOpening * dist;
-			tropism_eg[me] += BishopTropismEndgame * dist;
+            tropism_op[me] += BishopTropismOpening * dist;
+            tropism_eg[me] += BishopTropismEndgame * dist;
 
             break;
 
@@ -777,9 +774,9 @@ static void eval_piece(const board_t * board, const material_info_t * mat_info, 
             for (int i = 0; i < 4; ++i) {
                 int vc = rook_vector[i];
 
-				for (to = from + vc; capture = board->square[to], THROUGH(capture); to += vc) {
-					mob += MobMove;
-				}
+                for (to = from + vc; capture = board->square[to], THROUGH(capture); to += vc) {
+                   mob += MobMove;
+                }
                 mob += unit[capture];
             }
 
@@ -792,8 +789,6 @@ static void eval_piece(const board_t * board, const material_info_t * mat_info, 
 
                op[me] -= RookOpenFileOpening / 2;
                eg[me] -= RookOpenFileEndgame / 2;
-
-               piece_file = SQUARE_FILE(from);
 
                if (board->pawn_file[me][piece_file] == 0) { // no friendly pawn
 
@@ -830,13 +825,10 @@ static void eval_piece(const board_t * board, const material_info_t * mat_info, 
                }
             }
 
-			// king tropism
+            // king tropism
 
-			piece_file = SQUARE_FILE(from);
-			piece_rank = SQUARE_RANK(from);
-			dist = 7 - (ABS(king_file - piece_file) + ABS(king_rank - piece_rank));
-			tropism_op[me] += RookTropismOpening * dist;
-			tropism_eg[me] += RookTropismEndgame * dist;
+            tropism_op[me] += RookTropismOpening * dist;
+            tropism_eg[me] += RookTropismEndgame * dist;
 
             break;
 
@@ -849,18 +841,18 @@ static void eval_piece(const board_t * board, const material_info_t * mat_info, 
             for (int i = 0; i < 4; ++i) {
                 int vc = bishop_vector[i];
 
-				for (to = from + vc; capture = board->square[to], THROUGH(capture); to += vc) {
-					mob += MobMove;
-				}
+                for (to = from + vc; capture = board->square[to], THROUGH(capture); to += vc) {
+                   mob += MobMove;
+                }
                 mob += unit[capture];
             }
 
             for (int i = 0; i < 4; ++i) {
                 int vc = rook_vector[i];
 
-				for (to = from + vc; capture = board->square[to], THROUGH(capture); to += vc) {
-					mob += MobMove;
-				}
+            for (to = from + vc; capture = board->square[to], THROUGH(capture); to += vc) {
+                mob += MobMove;
+            }
                 mob += unit[capture];
             }
 
@@ -877,13 +869,10 @@ static void eval_piece(const board_t * board, const material_info_t * mat_info, 
                }
             }
 
-			// king tropism
+            // king tropism
 
-			piece_file = SQUARE_FILE(from);
-			piece_rank = SQUARE_RANK(from);
-			dist = 7 - (ABS(king_file - piece_file) + ABS(king_rank - piece_rank));
-			tropism_op[me] += QueenTropismOpening * dist;
-			tropism_eg[me] += QueenTropismEndgame * dist;
+            tropism_op[me] += QueenTropismOpening * dist;
+            tropism_eg[me] += QueenTropismEndgame * dist;
 
             break;
          }
@@ -2026,21 +2015,21 @@ static bool bishop_can_attack(const board_t * board, int to, int colour) {
 }
 
 int white_pawn_controls(const board_t * board, int sq) {
-	return (board->square[sq - 15] == WP || board->square[sq - 17] == WP);
+    return (board->square[sq - 15] == WP || board->square[sq - 17] == WP);
 }
 
 int black_pawn_controls(const board_t * board, int sq) {
-	return (board->square[sq + 15] == BP || board->square[sq + 17] == BP);
+    return (board->square[sq + 15] == BP || board->square[sq + 17] == BP);
 }
 
 int enemy_pawn_controls(const board_t * board, int colour, int sq) {
-	if (colour == White) return black_pawn_controls(board, sq);
-	return white_pawn_controls(board, sq);
+    if (colour == White) return black_pawn_controls(board, sq);
+    return white_pawn_controls(board, sq);
 }
 
 int own_pawn_controls(const board_t * board, int colour, int sq) {
-	if (colour == White) return white_pawn_controls(board, sq);
-	return black_pawn_controls(board, sq);
+    if (colour == White) return white_pawn_controls(board, sq);
+    return black_pawn_controls(board, sq);
 }
 
 // end of eval.cpp
