@@ -654,7 +654,6 @@ static void eval_piece(const board_t * board, const material_info_t * mat_info, 
    int piece;
    int dist;
    int mob;
-   int sq;
    int capture;
    const int * unit;
    int piece_file, piece_rank, king_file, king_rank;
@@ -686,8 +685,8 @@ static void eval_piece(const board_t * board, const material_info_t * mat_info, 
       opp = COLOUR_OPP(me);
       opp_flag = COLOUR_FLAG(opp);
       king = KING_POS(board, opp);
-      king_file = SQUARE_FILE(king);
-      king_rank = SQUARE_RANK(king);
+      king_file = SQUARE_FILE(king); // for rook on open file eval and king tropism eval
+      king_rank = SQUARE_RANK(king); // for king tropism eval
   
       unit = MobUnit[me];
 
@@ -696,7 +695,7 @@ static void eval_piece(const board_t * board, const material_info_t * mat_info, 
       for (ptr = &board->piece[me][1]; (from=*ptr) != SquareNone; ptr++) { // HACK: no king
 
          piece = board->square[from];
-         piece_file = SQUARE_FILE(from);
+         piece_file = SQUARE_FILE(from); // for king tropism and rook on open file eval
          piece_rank = SQUARE_RANK(from);
          dist = 7 - (ABS(king_file - piece_file) + ABS(king_rank - piece_rank)); // for king tropism eval
 
@@ -801,9 +800,6 @@ static void eval_piece(const board_t * board, const material_info_t * mat_info, 
                   }
 
                   if ((mat_info->cflags[opp] & MatKingFlag) != 0) {
-
-                     king = KING_POS(board,opp);
-                     king_file = SQUARE_FILE(king);
 
                      delta = abs(piece_file-king_file); // file distance
 
