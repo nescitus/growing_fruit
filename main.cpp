@@ -32,7 +32,7 @@ int main(int argc, char * argv[]) {
    util_init();
    my_random_init(); // for opening book
 
-   printf("GrowingFruit 0.006 UCI by Fabien Letouzey, Pawel Koziol\n");
+   printf("GrowingFruit 0.007 UCI by Fabien Letouzey, Pawel Koziol\n");
 
    // early initialisation (the rest is done after UCI options are parsed in protocol.cpp)
 

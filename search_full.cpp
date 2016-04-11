@@ -92,6 +92,7 @@ int lmr_zw[256][256];
 #define NODE_OPP(type)     (-(type))
 #define DEPTH_MATCH(d1,d2) ((d1)>=(d2))
 #define Min(x, y)          ((x) < (y) ? (x) : (y))
+#define Max(x, y)          ((x) > (y) ? (x) : (y))
 
 // prototypes
 
@@ -180,23 +181,23 @@ void search_full_init(list_t * list, board_t * board) {
 
    // late move reduction
 
-   // Set depth of late move reduction using modified Stockfish formula
+   double r;
 
    for (int dp = 0; dp < 256; dp++)
-	   for (int mv = 0; mv < 256; mv++) {
-		   lmr_zw[dp][mv] = (0.33 + log((double)(dp)) * log((double)(Min(mv, 63))) / 2.25); // zero window node
-		   lmr_pv[dp][mv] = (0.00 + log((double)(dp)) * log((double)(Min(mv, 63))) / 3.50); // principal variation node
+      for (int mv = 0; mv < 256; mv++) {
 
-		    if (lmr_pv[dp][mv] < 1) lmr_pv[dp][mv] = 0; // ultra-small reductions make no sense
-			else lmr_pv[dp][mv] += 0.5;
-			if (lmr_zw[dp][mv] < 1) lmr_zw[dp][mv] = 0;
-			else lmr_zw[dp][mv] += 0.5;
+         r = log((double)dp) * log((double)Min(mv, 63)) / 2;
+         if (r < 0.80) r = 0;
 
-		   if (lmr_pv[dp][mv] > dp - 1) // reduction cannot exceed actual depth
-			   lmr_pv[dp][mv] = dp - 1;
-		   if (lmr_zw[dp][mv] > dp - 1)
-			   lmr_zw[dp][mv] = dp - 1;
-	   }
+         lmr_zw[dp][mv] = r;             // zero window node
+         lmr_pv[dp][mv] = Max(r - 1, 0); // principal variation node
+
+         if (lmr_pv[dp][mv] < 1) lmr_pv[dp][mv] = 0; // ultra-small reductions make no sense
+         if (lmr_pv[dp][mv] < 1) lmr_pv[dp][mv] = 0;
+
+         if (lmr_pv[dp][mv] > dp - 1) lmr_pv[dp][mv] = dp - 1; // don't exceed actual depth
+         if (lmr_zw[dp][mv] > dp - 1) lmr_zw[dp][mv] = dp - 1;		   
+   }
 
    // standard sort
 
