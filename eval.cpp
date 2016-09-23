@@ -709,9 +709,6 @@ static void eval_piece(const board_t * board, const material_info_t * mat_info, 
 
             for (int i = 0; i < 8; ++i) {
 				to = from + knight_vector[i];
-                // we add mobility bonus for squares which are either occupied 
-				// (depending on occupying piece) or not controlled by enemy pawn
-				if (!THROUGH(to) || !enemy_pawn_controls(board, me, to))
                 mob += unit[board->square[to]];
             }
 
