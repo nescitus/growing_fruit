@@ -245,7 +245,7 @@ void eval_init() {
    MobUnit[White][BQ] = MobAttack;
    MobUnit[White][BK] = MobAttack;
 
-   MobUnit[White][WP] = MobDefense;
+   MobUnit[White][WP] = MobDefense; // TODO: try bonus for defending non-pawns
    MobUnit[White][WN] = MobDefense;
    MobUnit[White][WB] = MobDefense;
    MobUnit[White][WR] = MobDefense;
@@ -708,7 +708,11 @@ static void eval_piece(const board_t * board, const material_info_t * mat_info, 
             mob = -KnightUnit;
 
             for (int i = 0; i < 8; ++i) {
-                mob += unit[board->square[from + knight_vector[i]]];
+				to = from + knight_vector[i];
+                // we add mobility bonus for squares which are either occupied 
+				// (depending on occupying piece) or not controlled by enemy pawn
+				if (!THROUGH(to) || !enemy_pawn_controls(board, me, to))
+                mob += unit[board->square[to]];
             }
 
             op[me] += mob * KnightMobOpening;
